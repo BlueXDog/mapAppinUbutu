@@ -1,0 +1,2 @@
+rootProject.name='MapAppInUbutu'
+include ':app'
