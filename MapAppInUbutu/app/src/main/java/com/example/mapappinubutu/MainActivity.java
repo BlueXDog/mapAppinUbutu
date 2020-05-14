@@ -18,8 +18,11 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.Toast;
 
+import com.example.adapter.MyInfoAdapter;
 import com.example.mapappinubutu.R;
+import com.example.model.WeatherPos;
 import com.google.android.gms.location.FusedLocationProviderApi;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -31,6 +34,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -53,6 +57,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     FusedLocationProviderClient mFusedLocationClient;
     LocationRequest mLocationRequest;
 
+    //khoi tao fake weatherpost bach khoa
+    WeatherPos posBachKhoa = new WeatherPos("Bach Khoa",21.004801,105.846108,15,12,1224);
+    WeatherPos posVinhHung = new WeatherPos("Vinh Hung",21.004801,105.846108,15,12,1224);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
 
+
     }
 
     private void xuLyDoiCheDoHienThi(int position) {
@@ -97,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 break;
 
         }
+
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
@@ -104,7 +113,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             }
         });
-
 
 
     }
@@ -128,6 +136,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         progressDialog.setCanceledOnTouchOutside(false);
         progressDialog.show();
 
+
+
+    }
+
+    private void xyLyClickInfoWindow(Marker marker) {
+        if (marker.getTitle().equals("Bach Khoa")) {
+            mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, posBachKhoa));
+            marker.showInfoWindow();
+            Toast.makeText(MainActivity.this,"xu ly khi click bach khoa ",Toast.LENGTH_LONG).show();
+
+        }
+        else if (marker.getTitle().equals("Vinh Hung")) {
+            mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, posVinhHung));
+            marker.showInfoWindow();
+            Toast.makeText(MainActivity.this,"xu ly khi click vinh hung ",Toast.LENGTH_LONG).show();
+        }
+
     }
 
     @Override
@@ -136,18 +161,38 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (mFusedLocationClient!=null){
             mFusedLocationClient.removeLocationUpdates(mLocationCallBack);
         }
+
     }
 
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-        // Add a marker in Sydney and move the camera
-        //LatLng vinhhung = new LatLng(20.9975, 105.8798);
-        //mMap.addMarker(new MarkerOptions().position(vinhhung).title("Marker in Vinh Hung").snippet("my home"));
+        LatLng vinhhung = new LatLng(20.9975, 105.8798);
+        mMap.addMarker(new MarkerOptions().position(vinhhung).title("Vinh Hung").snippet("my home"));
         LatLng bachkhoa = new LatLng(21.004801, 105.846108);
-        mMap.addMarker(new MarkerOptions().position(bachkhoa).title("Marker in Bach Khoa"));
+        Marker bachkhoa_marker=mMap.addMarker(new MarkerOptions().position(bachkhoa).title("Bach Khoa"));
+
+        bachkhoa_marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                if (marker.getTitle().equals("Bach Khoa")) {
+                    mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, posBachKhoa));
+                    marker.showInfoWindow();
+                    Toast.makeText(MainActivity.this,"xu ly khi click bach khoa ",Toast.LENGTH_LONG).show();
+
+                }
+                else if (marker.getTitle().equals("Vinh Hung")) {
+                    mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, posVinhHung));
+                    marker.showInfoWindow();
+                    Toast.makeText(MainActivity.this,"xu ly khi click vinh hung ",Toast.LENGTH_LONG).show();
+                }
+                return false;
+            }
+        });
+
+
         //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(bachkhoa,14));
 
         mLocationRequest = new LocationRequest();
@@ -172,6 +217,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             mMap.setMyLocationEnabled(true);
         }
     }
+
+    private void xuLyCloseInfoWindow(Marker marker) {
+        marker.hideInfoWindow();
+
+        Toast.makeText(MainActivity.this,"Hide info window",Toast.LENGTH_LONG).show();
+
+    }
+
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     private void checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
