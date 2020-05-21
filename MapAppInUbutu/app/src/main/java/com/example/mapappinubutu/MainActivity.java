@@ -1,5 +1,6 @@
 package com.example.mapappinubutu;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -22,7 +23,9 @@ import android.widget.Toast;
 
 import com.example.adapter.MyInfoAdapter;
 import com.example.mapappinubutu.R;
+import com.example.model.WeatherInfo;
 import com.example.model.WeatherPos;
+import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.location.FusedLocationProviderApi;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -39,6 +42,12 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.sql.Array;
 import java.util.ArrayList;
@@ -56,15 +65,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     Location mLastLocation;
     FusedLocationProviderClient mFusedLocationClient;
     LocationRequest mLocationRequest;
+    private static final int SIGN_IN_REQUEST_CODE=111;
+
+    private DatabaseReference mDatabase;
+
+    private WeatherInfo bachKhoaInfo,ktqdInfo,ftuInfo;
+
 
     //khoi tao fake weatherpost bach khoa
-    WeatherPos posBachKhoa = new WeatherPos("Bach Khoa",21.004801,105.846108,15,12,1224);
-    WeatherPos posVinhHung = new WeatherPos("Vinh Hung",21.004801,105.846108,15,12,1224);
+   // WeatherPos posBachKhoa = new WeatherPos("Bach Khoa",21.004801,105.846108,15,12,1224);
+    //WeatherPos posVinhHung = new WeatherPos("Vinh Hung",21.004801,105.846108,15,12,1224);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
         addControls();
         addEvents();
     }
@@ -142,16 +159,88 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void xyLyClickInfoWindow(Marker marker) {
         if (marker.getTitle().equals("Bach Khoa")) {
-            mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, posBachKhoa));
+            mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this,bachKhoaInfo));
             marker.showInfoWindow();
             Toast.makeText(MainActivity.this,"xu ly khi click bach khoa ",Toast.LENGTH_LONG).show();
 
         }
-        else if (marker.getTitle().equals("Vinh Hung")) {
-            mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, posVinhHung));
+        else if (marker.getTitle().equals("Ngoai Thuong")) {
+            mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, ftuInfo));
             marker.showInfoWindow();
             Toast.makeText(MainActivity.this,"xu ly khi click vinh hung ",Toast.LENGTH_LONG).show();
         }
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(FirebaseAuth.getInstance().getCurrentUser() == null) {
+            // Start sign in/sign up activity
+            startActivityForResult(
+                    AuthUI.getInstance()
+                            .createSignInIntentBuilder()
+                            .build(),
+                    SIGN_IN_REQUEST_CODE
+            );
+        } else {
+            // User is already signed in. Therefore, display
+            // a welcome Toast
+            Toast.makeText(this,
+                    "Welcome " + FirebaseAuth.getInstance()
+                            .getCurrentUser()
+                            .getDisplayName(),
+                    Toast.LENGTH_LONG)
+                    .show();
+        }
+        mDatabase= FirebaseDatabase.getInstance().getReference();
+            final DatabaseReference bachkhoa=mDatabase.child("weatherinfo").child("bachkhoa");
+            bachkhoa.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    bachKhoaInfo=dataSnapshot.getValue(WeatherInfo.class);
+                    Toast.makeText(MainActivity.this,"gia tri cua bach khoa"+bachKhoaInfo.toString(),Toast.LENGTH_LONG).show();
+                    Log.i("bachkhoa", "onDataChange: "+bachKhoaInfo.toString());
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+            final DatabaseReference ktqd=mDatabase.child("weatherinfo").child("ktqd");
+            ktqd.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    ktqdInfo=dataSnapshot.getValue(WeatherInfo.class);
+                    Toast.makeText(MainActivity.this,"gia tri cua ktqd"+ktqdInfo.toString(),Toast.LENGTH_LONG).show();
+                    Log.i("ktqd", "onDataChange: "+ktqdInfo.toString());
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+            mDatabase.child("weatherinfo").child("ftu").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    ftuInfo=dataSnapshot.getValue(WeatherInfo.class);
+                    Log.i("ftu","this is data of ftu "+ftuInfo.toString());
+
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+
+
+
 
     }
 
@@ -168,28 +257,38 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        LatLng vinhhung = new LatLng(20.9975, 105.8798);
-        mMap.addMarker(new MarkerOptions().position(vinhhung).title("Vinh Hung").snippet("my home"));
+       // LatLng vinhhung = new LatLng(20.9975, 105.8798);
+       // mMap.addMarker(new MarkerOptions().position(vinhhung).title("Vinh Hung").snippet("my home"));
+
         LatLng bachkhoa = new LatLng(21.004801, 105.846108);
         Marker bachkhoa_marker=mMap.addMarker(new MarkerOptions().position(bachkhoa).title("Bach Khoa"));
 
+        LatLng ngoaithuong = new LatLng(21.023243, 105.805469);
+        Marker ngoaithuong_marker=mMap.addMarker(new MarkerOptions().position(ngoaithuong).title("Ngoai Thuong"));
+
         bachkhoa_marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+        ngoaithuong_marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
                 if (marker.getTitle().equals("Bach Khoa")) {
-                    mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, posBachKhoa));
+                    mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, bachKhoaInfo));
                     marker.showInfoWindow();
                     Toast.makeText(MainActivity.this,"xu ly khi click bach khoa ",Toast.LENGTH_LONG).show();
 
                 }
-                else if (marker.getTitle().equals("Vinh Hung")) {
-                    mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, posVinhHung));
+                if (marker.getTitle().equals("Ngoai Thuong")) {
+                    mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this,ftuInfo));
                     marker.showInfoWindow();
                     Toast.makeText(MainActivity.this,"xu ly khi click vinh hung ",Toast.LENGTH_LONG).show();
                 }
+                if (marker.getTitle().equals("Current Position"))
+                {
+                    Toast.makeText(MainActivity.this,"day la vi tri hien tai ",Toast.LENGTH_LONG).show();
+                }
                 return false;
             }
+
         });
 
 

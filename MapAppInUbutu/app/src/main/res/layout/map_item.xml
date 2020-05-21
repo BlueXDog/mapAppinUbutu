@@ -5,13 +5,6 @@
     android:orientation="vertical"
     >
 
-    <TextView
-        android:id="@+id/txttenDiaDiem"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:gravity="center_horizontal|center_vertical"
-        android:textSize="18sp" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="51dp"
@@ -36,7 +29,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="66dp"
+        android:layout_height="56dp"
         android:orientation="horizontal">
 
         <TextView
@@ -53,6 +46,27 @@
             android:layout_height="53dp"
             android:layout_weight="1"
             android:gravity="center_horizontal|center_vertical" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="do bui" />
+
+        <TextView
+            android:id="@+id/txtDoBui"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center" />
     </LinearLayout>
 
 </LinearLayout>
