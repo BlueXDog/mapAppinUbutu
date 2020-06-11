@@ -5,6 +5,8 @@ public class WeatherInfo {
     private float dobui;
     private float nhietdo;
 
+
+
     public WeatherInfo() {
     }
 

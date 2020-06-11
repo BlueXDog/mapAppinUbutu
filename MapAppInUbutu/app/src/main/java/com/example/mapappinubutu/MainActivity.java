@@ -8,8 +8,12 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.ContentValues;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -49,9 +53,17 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
@@ -67,9 +79,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     LocationRequest mLocationRequest;
     private static final int SIGN_IN_REQUEST_CODE=111;
 
-    private DatabaseReference mDatabase;
+
 
     private WeatherInfo bachKhoaInfo,ktqdInfo,ftuInfo;
+
+    private DatabaseReference mDatabase;
+    String DATABASE_NAME="weatherinfo.sqlite";
+    private static final String DB_PATH_SUFFIX = "/databases/";
+    SQLiteDatabase weatherInfoDatabase=null;
 
 
     //khoi tao fake weatherpost bach khoa
@@ -84,6 +101,51 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         addControls();
         addEvents();
+    }
+    private String layDuongDanDatabase()
+    {
+        return getApplicationInfo().dataDir+DB_PATH_SUFFIX+DATABASE_NAME;
+    }
+
+    private void copyDataBaseFromAssets() {
+        File dbFile= getDatabasePath(DATABASE_NAME);
+        if (!dbFile.exists())
+        {
+            try {
+                copyDatabaseToApp();
+                Log.i("copyDatabase","copy success");
+            }
+            catch (Exception e)
+            {
+                Log.i("copyDatabaseError",e.toString());
+            }
+        }
+    }
+
+    private void copyDatabaseToApp() {
+        try {
+
+            InputStream myInput = getAssets().open(DATABASE_NAME);
+            //String outputFile=layDuongDanDatabase();
+            File f =new File(getApplicationInfo().dataDir+DB_PATH_SUFFIX);
+            if (!f.exists())
+                f.mkdir();
+            OutputStream myOutput=new FileOutputStream(layDuongDanDatabase());
+            byte[] buffer =new byte[1024];
+            int length;
+            while ((length=myInput.read(buffer))>0)
+            {
+                myOutput.write(buffer,0,length);
+            }
+            myOutput.flush();
+            myOutput.close();
+            myInput.close();
+
+        }
+        catch (Exception e)
+        {
+            Log.i("copyDatabaseError", "fail to copy data to internal app");
+        }
     }
 
     private void addEvents() {
@@ -175,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onStart() {
         super.onStart();
+        copyDataBaseFromAssets();
         if(FirebaseAuth.getInstance().getCurrentUser() == null) {
             // Start sign in/sign up activity
             startActivityForResult(
@@ -199,6 +262,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     bachKhoaInfo=dataSnapshot.getValue(WeatherInfo.class);
+                    long count=  dataSnapshot.getChildrenCount();
+                    Log.i("datasnap","the number of children :"+count);
+                    Log.i("snapshotString",dataSnapshot.toString());
+                    for (DataSnapshot child:dataSnapshot.getChildren())
+                    {
+                        Log.i("DataSnapShotChild:",child.toString());
+
+                    }
+
+                    //Log.i("bkjsoninfo","du lieu json bachkhoa"+bkinfo.toString());
                     Toast.makeText(MainActivity.this,"gia tri cua bach khoa"+bachKhoaInfo.toString(),Toast.LENGTH_LONG).show();
                     Log.i("bachkhoa", "onDataChange: "+bachKhoaInfo.toString());
 
@@ -238,6 +311,67 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 }
             });
+            mDatabase.child("weatherinfo").child("hvnn").addValueEventListener(new ValueEventListener() {
+                //ArrayList<DataSnapshot> childArr=new ArrayList<>();
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                /*    for(DataSnapshot child:dataSnapshot.getChildren())
+                    {
+                        childArr.add(child);
+                        Log.i("datahvnn",child.getValue(WeatherInfo.class).toString());
+
+                    }
+
+                    Log.i("child moi", childArr.get(childArr.size() - 1).toString());
+                    */
+                    weatherInfoDatabaseChanged("hvnnInfo",dataSnapshot);
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+
+
+
+
+    }
+
+    private void weatherInfoDatabaseChanged(String databaseInfo, DataSnapshot dataSnapshot) {
+        try{
+           weatherInfoDatabase=openOrCreateDatabase("weatherinfo.sqlite",MODE_PRIVATE,null);
+           //String deleteSQL="delete from ".concat(databaseInfo);
+           weatherInfoDatabase.delete(databaseInfo,null,null);
+           for (DataSnapshot child: dataSnapshot.getChildren())
+           {
+               ContentValues contentValues=new ContentValues();
+               contentValues.put("updateTime", Integer.parseInt(child.getKey()));
+               contentValues.put("doam",child.getValue(WeatherInfo.class).getDoam());
+               contentValues.put("dobui",child.getValue(WeatherInfo.class).getDobui());
+               contentValues.put("nhietdo",child.getValue(WeatherInfo.class).getNhietdo());
+               if (weatherInfoDatabase.insert(databaseInfo,null,contentValues)==-1)
+                   Log.i("databaseError","error insert data to table ");
+               else Log.i("databaseError","success insert data to table");
+
+
+
+
+           }
+            Cursor cursor=weatherInfoDatabase.rawQuery("select * from hvnnInfo",null);
+            Log.i("rowNumber","the number of row ="+cursor.getCount());
+            while (cursor.moveToNext())
+            {
+                Log.i("readData","updateTime :"+cursor.getInt(0));
+                Log.i("readData","doam :"+cursor.getFloat(1));
+            }
+
+            weatherInfoDatabase.close();
+        }
+        catch (Exception e)
+        {
+            Log.i("databaseError","error to open database :"+e.toString());
+        }
 
 
 
@@ -266,6 +400,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         LatLng ngoaithuong = new LatLng(21.023243, 105.805469);
         Marker ngoaithuong_marker=mMap.addMarker(new MarkerOptions().position(ngoaithuong).title("Ngoai Thuong"));
 
+        LatLng hvnn = new LatLng(21.003855, 105.931602);
+        Marker hvnn_marker=mMap.addMarker(new MarkerOptions().position(hvnn).title("Nong Nghiep"));
+
+
         bachkhoa_marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
         ngoaithuong_marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
@@ -285,6 +423,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (marker.getTitle().equals("Current Position"))
                 {
                     Toast.makeText(MainActivity.this,"day la vi tri hien tai ",Toast.LENGTH_LONG).show();
+                }
+                if (marker.getTitle().equals("Nong Nghiep"))
+                {
+                    Intent intent=new Intent(MainActivity.this,GraphicChart.class);
+                    startActivities(new Intent[]{intent},null);
+
                 }
                 return false;
             }

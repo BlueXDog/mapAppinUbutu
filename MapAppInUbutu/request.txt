@@ -1,0 +1,11 @@
+PATCH /weatherinfo/bachkhoa.json HTTP/1.1
+Host: fir-messapp-ca232.firebaseio.com
+Content-Type: application/json
+Authorization: Bearer ya29.c.Ko8BzAfnS937l5KXmtF3ukAT-BlOiTRzRO1lCD54sAc-b1v4Y_EhgMcvZamtUEqUu9YayKv_XfhZNkFeacakPBy20ocWlej9tdgdB7jDTdK4iYKEH-le_Qx-p0fRetilRAsxBDz0P6mUyMoYaBFfzVKmooZUsgvwDML1NuGC70NzxcJq6RV1hCl1DaHW2ZsUqVY
+cache-control: no-cache
+Postman-Token: 66141b1b-5474-46ac-9fd0-bf1c70bce74f
+{
+    "doam": 60,
+    "dobui": 65,
+    "nhietdo": 60
+}------WebKitFormBoundary7MA4YWxkTrZu0gW--
