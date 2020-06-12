@@ -88,6 +88,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final String DB_PATH_SUFFIX = "/databases/";
     SQLiteDatabase weatherInfoDatabase=null;
 
+    private static final String bkTableName ="bachkhoaInfo";
+    private static final String ftuTableName = "ftuInfo";
+    private static final String ktqdTableName ="ktqdInfo";
+    private static final String hvnnTableName = "hvnnInfo";
+
+
 
     //khoi tao fake weatherpost bach khoa
    // WeatherPos posBachKhoa = new WeatherPos("Bach Khoa",21.004801,105.846108,15,12,1224);
@@ -261,7 +267,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             bachkhoa.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    bachKhoaInfo=dataSnapshot.getValue(WeatherInfo.class);
+                   /* bachKhoaInfo=dataSnapshot.getValue(WeatherInfo.class);
                     long count=  dataSnapshot.getChildrenCount();
                     Log.i("datasnap","the number of children :"+count);
                     Log.i("snapshotString",dataSnapshot.toString());
@@ -273,8 +279,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     //Log.i("bkjsoninfo","du lieu json bachkhoa"+bkinfo.toString());
                     Toast.makeText(MainActivity.this,"gia tri cua bach khoa"+bachKhoaInfo.toString(),Toast.LENGTH_LONG).show();
-                    Log.i("bachkhoa", "onDataChange: "+bachKhoaInfo.toString());
-
+                    Log.i("bachkhoa", "onDataChange: "+bachKhoaInfo.toString());*/
+                    weatherInfoDatabaseChanged(bkTableName,dataSnapshot);
                 }
 
                 @Override
@@ -286,9 +292,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             ktqd.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    ktqdInfo=dataSnapshot.getValue(WeatherInfo.class);
-                    Toast.makeText(MainActivity.this,"gia tri cua ktqd"+ktqdInfo.toString(),Toast.LENGTH_LONG).show();
-                    Log.i("ktqd", "onDataChange: "+ktqdInfo.toString());
+                   // ktqdInfo=dataSnapshot.getValue(WeatherInfo.class);
+                    //Toast.makeText(MainActivity.this,"gia tri cua ktqd"+ktqdInfo.toString(),Toast.LENGTH_LONG).show();
+                    weatherInfoDatabaseChanged(ktqdTableName,dataSnapshot);
+                    //Log.i("ktqd", "onDataChange: "+ktqdInfo.toString());
 
                 }
 
@@ -300,9 +307,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             mDatabase.child("weatherinfo").child("ftu").addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    ftuInfo=dataSnapshot.getValue(WeatherInfo.class);
-                    Log.i("ftu","this is data of ftu "+ftuInfo.toString());
-
+                    //ftuInfo=dataSnapshot.getValue(WeatherInfo.class);
+                    //Log.i("ftu","this is data of ftu "+ftuInfo.toString());
+                    weatherInfoDatabaseChanged(ftuTableName,dataSnapshot);
 
                 }
 
@@ -324,7 +331,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     Log.i("child moi", childArr.get(childArr.size() - 1).toString());
                     */
-                    weatherInfoDatabaseChanged("hvnnInfo",dataSnapshot);
+                    weatherInfoDatabaseChanged(hvnnTableName,dataSnapshot);
                 }
 
                 @Override
@@ -346,7 +353,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
            for (DataSnapshot child: dataSnapshot.getChildren())
            {
                ContentValues contentValues=new ContentValues();
-               contentValues.put("updateTime", Integer.parseInt(child.getKey()));
+               contentValues.put("updateTime", Integer.parseInt(child.getKey().trim()));
                contentValues.put("doam",child.getValue(WeatherInfo.class).getDoam());
                contentValues.put("dobui",child.getValue(WeatherInfo.class).getDobui());
                contentValues.put("nhietdo",child.getValue(WeatherInfo.class).getNhietdo());
@@ -358,7 +365,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
            }
-            Cursor cursor=weatherInfoDatabase.rawQuery("select * from hvnnInfo",null);
+            String selectQuery="select * from ".concat(databaseInfo);
+            Cursor cursor=weatherInfoDatabase.rawQuery(selectQuery,null);
             Log.i("rowNumber","the number of row ="+cursor.getCount());
             while (cursor.moveToNext())
             {
@@ -403,21 +411,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         LatLng hvnn = new LatLng(21.003855, 105.931602);
         Marker hvnn_marker=mMap.addMarker(new MarkerOptions().position(hvnn).title("Nong Nghiep"));
 
+        LatLng ktqd = new LatLng(21.000095, 105.842207);
+        Marker ktqd_marker=mMap.addMarker(new MarkerOptions().position(ktqd).title("ktqd"));
+
 
         bachkhoa_marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
         ngoaithuong_marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+        ktqd_marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
                 if (marker.getTitle().equals("Bach Khoa")) {
-                    mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, bachKhoaInfo));
-                    marker.showInfoWindow();
+                    //mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this, bachKhoaInfo));
+                    //marker.showInfoWindow();
+                    Intent intent=new Intent(MainActivity.this,GraphicChart.class);
+                    Bundle bundle=new Bundle();
+                    bundle.putString("tableNameInfo",bkTableName);
+                    intent.putExtra("bundleInfo",bundle);
+                    startActivities(new Intent[]{intent},null);
                     Toast.makeText(MainActivity.this,"xu ly khi click bach khoa ",Toast.LENGTH_LONG).show();
 
                 }
                 if (marker.getTitle().equals("Ngoai Thuong")) {
-                    mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this,ftuInfo));
-                    marker.showInfoWindow();
+                    /*mMap.setInfoWindowAdapter(new MyInfoAdapter(MainActivity.this,ftuInfo));
+                    marker.showInfoWindow();*/
+                    Intent intent=new Intent(MainActivity.this,GraphicChart.class);
+                    Bundle bundle=new Bundle();
+                    bundle.putString("tableNameInfo",ftuTableName);
+                    intent.putExtra("bundleInfo",bundle);
+                    startActivities(new Intent[]{intent},null);
                     Toast.makeText(MainActivity.this,"xu ly khi click vinh hung ",Toast.LENGTH_LONG).show();
                 }
                 if (marker.getTitle().equals("Current Position"))
@@ -427,9 +449,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (marker.getTitle().equals("Nong Nghiep"))
                 {
                     Intent intent=new Intent(MainActivity.this,GraphicChart.class);
+                    Bundle bundle=new Bundle();
+                    bundle.putString("tableNameInfo",hvnnTableName);
+                    intent.putExtra("bundleInfo",bundle);
                     startActivities(new Intent[]{intent},null);
 
                 }
+                if (marker.getTitle().equals("ktqd"))
+                {
+                    Intent intent=new Intent(MainActivity.this,GraphicChart.class);
+                    Bundle bundle=new Bundle();
+                    bundle.putString("tableNameInfo",ktqdTableName);
+                    intent.putExtra("bundleInfo",bundle);
+                    startActivities(new Intent[]{intent},null);
+
+                }
+
                 return false;
             }
 

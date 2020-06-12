@@ -37,15 +37,16 @@ public class GraphicChart extends AppCompatActivity {
     private static final int nhietdoIndex = 3;
     private static final int dobuiIndex = 2;
 
+    private static final String bkTableName ="bachkhoaInfo";
+    private static final String ftuTableName = "ftuInfo";
+    private static final String ktqdTableName ="ktqdInfo";
+    private static final String hvnnTableName = "hvnnInfo";
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_graphic_chart);
         addControls();
         addEvents();
-
-
-
 
 
 
@@ -56,6 +57,9 @@ public class GraphicChart extends AppCompatActivity {
         List<Entry> doamEntries=new ArrayList<Entry>();
         List<Entry> nhietdoEntries=new ArrayList<Entry>();
         List<Entry> dobuiEntries=new ArrayList<Entry>();
+
+        String tableName=getIntent().getBundleExtra("bundleInfo").getString("tableNameInfo");
+        Log.i("tableName :",tableName);
 
        /* int nhietdo=20;
         int thoigian=1;
@@ -75,7 +79,8 @@ public class GraphicChart extends AppCompatActivity {
 
            weatherInfoDatabase = openOrCreateDatabase("weatherinfo.sqlite", MODE_PRIVATE, null);
            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss - EEE, dd MMM yyyy");
-           Cursor cursor = weatherInfoDatabase.rawQuery("select * from hvnnInfo", null);
+           String selectQuery ="select * from ".concat(tableName);
+           Cursor cursor = weatherInfoDatabase.rawQuery(selectQuery, null);
            Log.i("rowNumber", "the number of row =" + cursor.getCount());
            while (cursor.moveToNext()) {
                long epocTime = (long) cursor.getInt(0)*1000l;
@@ -106,8 +111,8 @@ public class GraphicChart extends AppCompatActivity {
            doamChart.setData(new LineData(doamDataSet));
            nhietdoChart.setData(new LineData(nhietdoDataSet));
            dobuiChart.setData(new LineData(dobuiDataSet));
-
-           Cursor cursorLatest=weatherInfoDatabase.rawQuery( "select *from hvnnInfo order by updateTime DESC",null);
+           String queryStr="select * from ".concat(tableName).concat("order by updateTime DESC");
+           Cursor cursorLatest=weatherInfoDatabase.rawQuery( "select * from "+tableName+" order by updateTime DESC",null);
            if (cursorLatest.moveToNext())
            {
                long lastestTime=(long) cursorLatest.getInt(0)*1000l;
@@ -116,6 +121,7 @@ public class GraphicChart extends AppCompatActivity {
                txtDoBui.setText(""+cursorLatest.getFloat(dobuiIndex));
                txtDoam.setText(""+cursorLatest.getFloat(doamIndex));
                txtNhietDo.setText(""+cursorLatest.getFloat(nhietdoIndex));
+               Log.i("cursor lastest", "success ");
            }
 
            weatherInfoDatabase.close();
